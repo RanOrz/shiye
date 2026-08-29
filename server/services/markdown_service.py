@@ -48,6 +48,9 @@ def _frontmatter(metadata: dict[str, Any], note_type: str, ai_result: dict[str, 
         f"created: {_yaml_string(created)}",
         f"type: {_yaml_string(note_type)}",
     ]
+    for key in ("site", "description", "duration", "transcription_method"):
+        if metadata.get(key) not in (None, ""):
+            lines.append(f"{key}: {_yaml_string(metadata[key])}")
     if tags:
         lines.append("tags:")
         lines.extend(f"  - {_yaml_string(tag)}" for tag in tags)
@@ -90,4 +93,3 @@ def render_media_markdown(
     lines.extend(_ai_sections(ai_result))
     lines.extend(["## 完整转写", "", transcript.strip(), ""])
     return "\n".join(lines).rstrip() + "\n"
-

@@ -85,6 +85,34 @@ class AppTests(unittest.TestCase):
         self.assertEqual(settings["save_root"], str(self.save_root))
         self.assertNotIn("api_key", settings["ai"])
 
+    def test_settings_reject_invalid_root_and_subdirectory(self):
+        missing = self.client.put(
+            "/api/settings",
+            headers=self.auth_headers(),
+            json={"save_root": str(self.root / "missing")},
+        )
+        traversal = self.client.put(
+            "/api/settings",
+            headers=self.auth_headers(),
+            json={"page_subdir": "../outside"},
+        )
+
+        self.assertEqual(missing.status_code, 400)
+        self.assertEqual(traversal.status_code, 400)
+
+    def test_rejects_oversized_json_with_structured_error(self):
+        response = self.client.post(
+            "/api/pages",
+            headers=self.auth_headers(),
+            json={
+                "metadata": {"title": "oversized"},
+                "content": "x" * (8 * 1024 * 1024),
+            },
+        )
+
+        self.assertEqual(response.status_code, 413)
+        self.assertEqual(response.get_json()["error"], "请求内容过大，请缩短网页正文后重试")
+
     def test_page_save_writes_markdown_to_selected_folder(self):
         self.configure_save_root()
         response = self.client.post(

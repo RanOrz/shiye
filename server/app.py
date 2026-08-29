@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any, Callable
 
 from flask import Flask, current_app, jsonify, request
+from werkzeug.exceptions import RequestEntityTooLarge
 
 from server.config_store import ConfigStore
 from server.job_manager import JobManager
@@ -19,6 +20,7 @@ from server.services.storage_service import StorageError, StorageService
 
 
 VERSION = "0.1.0"
+MAX_JSON_BYTES = 8 * 1024 * 1024
 
 
 class FolderSelectionError(RuntimeError):
@@ -54,6 +56,7 @@ def create_app(
     folder_selector: Callable[[], str] | None = None,
 ) -> Flask:
     app = Flask(__name__)
+    app.config["MAX_CONTENT_LENGTH"] = MAX_JSON_BYTES
     store = ConfigStore(config_path)
     media = media_service or MediaService()
     ai = ai_service or AIService()
@@ -122,6 +125,10 @@ def create_app(
             response.headers["Access-Control-Max-Age"] = "600"
         return response
 
+    @app.errorhandler(RequestEntityTooLarge)
+    def request_too_large(_error):
+        return jsonify({"error": "请求内容过大，请缩短网页正文后重试"}), 413
+
     def require_token(view):
         @wraps(view)
         def wrapped(*args, **kwargs):
@@ -157,8 +164,12 @@ def create_app(
         if request.method == "GET":
             return jsonify({"settings": store.public_settings()})
         payload = _json_payload()
-        if "save_root" in payload:
-            _validate_save_root(payload["save_root"])
+        try:
+            if "save_root" in payload:
+                _validate_save_root(payload["save_root"])
+            _validate_settings(payload)
+        except FolderSelectionError as exc:
+            return jsonify({"error": str(exc)}), 400
         return jsonify({"settings": store.update(payload)})
 
     @app.route("/api/settings/choose-folder", methods=["POST", "OPTIONS"])
@@ -247,6 +258,23 @@ def _validate_save_root(value: Any) -> None:
     path = Path(str(value or "")).expanduser()
     if not str(value or "").strip() or not path.exists() or not path.is_dir():
         raise FolderSelectionError("保存文件夹不存在或不是文件夹")
+
+
+def _validate_settings(payload: dict[str, Any]) -> None:
+    for key in ("page_subdir", "media_subdir"):
+        if key not in payload:
+            continue
+        relative = Path(str(payload[key] or "").strip() or ".")
+        if relative.is_absolute() or ".." in relative.parts:
+            raise FolderSelectionError("子目录必须位于 Markdown 根目录内")
+    if "whisper_model" in payload and payload["whisper_model"] not in {
+        "tiny",
+        "base",
+        "small",
+        "medium",
+        "large",
+    }:
+        raise FolderSelectionError("Whisper 模型设置无效")
 
 
 if __name__ == "__main__":

@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>拾页设置</title>
+    <link rel="stylesheet" href="options.css" />
+  </head>
+  <body>
+    <main class="settings-shell">
+      <header class="settings-header">
+        <div>
+          <p>LOCAL KNOWLEDGE PRESS · SETTINGS</p>
+          <h1>拾页设置</h1>
+        </div>
+        <span class="edition">NO. 001</span>
+      </header>
+
+      <section id="connection-card" class="connection-card">
+        <span id="connection-dot"></span>
+        <div>
+          <strong id="connection-label">正在连接本地服务</strong>
+          <p id="connection-detail">127.0.0.1:43127</p>
+        </div>
+      </section>
+
+      <form id="settings-form">
+        <section class="settings-section">
+          <div class="section-index">01</div>
+          <div class="section-body">
+            <h2>文件保存</h2>
+            <p class="section-note">首次选择后，两种工具都会自动写入该文件夹。路径只保存在你的电脑上。</p>
+
+            <label class="field">
+              <span>Markdown 根目录</span>
+              <div class="folder-control">
+                <input id="save-root" type="text" placeholder="请选择或填写本地文件夹" />
+                <button id="choose-folder" type="button">选择文件夹</button>
+              </div>
+            </label>
+
+            <div class="two-columns">
+              <label class="field">
+                <span>网页剪藏子目录</span>
+                <input id="page-subdir" type="text" />
+              </label>
+              <label class="field">
+                <span>视频转写子目录</span>
+                <input id="media-subdir" type="text" />
+              </label>
+            </div>
+          </div>
+        </section>
+
+        <section class="settings-section">
+          <div class="section-index">02</div>
+          <div class="section-body">
+            <h2>本地转写</h2>
+            <p class="section-note">模型越大通常越准确，但首次下载和转写时间也越长。</p>
+            <label class="field compact-field">
+              <span>Whisper 模型</span>
+              <select id="whisper-model">
+                <option value="tiny">tiny · 最快</option>
+                <option value="base">base · 推荐</option>
+                <option value="small">small · 更准确</option>
+                <option value="medium">medium · 高质量</option>
+                <option value="large">large · 最慢</option>
+              </select>
+            </label>
+          </div>
+        </section>
+
+        <section class="settings-section">
+          <div class="section-index">03</div>
+          <div class="section-body">
+            <div class="heading-with-toggle">
+              <div>
+                <h2>AI 整理</h2>
+                <p class="section-note">可选功能。关闭时仍会完整剪藏和转写。</p>
+              </div>
+              <label class="toggle-label">
+                <input id="ai-enabled" type="checkbox" />
+                <span></span>
+              </label>
+            </div>
+
+            <div id="ai-fields" class="ai-fields">
+              <div class="two-columns">
+                <label class="field">
+                  <span>服务类型</span>
+                  <select id="ai-provider">
+                    <option value="openai_compatible">OpenAI 兼容接口</option>
+                    <option value="ollama">本地 Ollama</option>
+                  </select>
+                </label>
+                <label class="field">
+                  <span>模型名称</span>
+                  <input id="ai-model" type="text" placeholder="例如：gpt-4.1-mini" />
+                </label>
+              </div>
+
+              <label class="field">
+                <span>服务地址</span>
+                <input id="ai-base-url" type="url" placeholder="https://api.openai.com/v1" />
+              </label>
+
+              <label id="api-key-field" class="field">
+                <span>API Key <small id="key-status">未保存</small></span>
+                <div class="folder-control">
+                  <input id="ai-api-key" type="password" placeholder="输入后只保存在本地" autocomplete="new-password" />
+                  <button id="clear-key" class="quiet-button" type="button">清除密钥</button>
+                </div>
+              </label>
+            </div>
+          </div>
+        </section>
+
+        <div class="save-bar">
+          <p id="form-message">设置更改后需要点击保存。</p>
+          <button id="save-settings" class="save-button" type="submit"><span>保存设置</span><b>→</b></button>
+        </div>
+      </form>
+
+      <aside class="local-note">
+        <strong>LOCAL FIRST</strong>
+        <p>网页正文和转写默认留在本地。只有主动勾选“AI 整理”时，相关文字才会发送给你配置的模型服务。</p>
+      </aside>
+    </main>
+
+    <script src="api-client.js"></script>
+    <script src="options.js"></script>
+  </body>
+</html>
