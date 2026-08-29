@@ -4,10 +4,10 @@ const ACTIVE_JOB_KEY = "localClipperActiveMediaJob";
 const elements = {
   serviceDot: document.getElementById("service-dot"), serviceLabel: document.getElementById("service-label"),
   saveLocation: document.getElementById("save-location"), saveLocationText: document.getElementById("save-location-text"),
-  openSettings: document.getElementById("open-settings"),
+  openSettings: document.getElementById("open-settings"), currentPage: document.getElementById("use-current-page"),
   resourceForm: document.getElementById("resource-form"), resourceUrl: document.getElementById("resource-url"),
   resourceSubmit: document.getElementById("resource-submit"), pagePreview: document.getElementById("page-preview"),
-  pageContent: document.getElementById("page-content"), pageWordCount: document.getElementById("page-word-count"),
+  pageContent: document.getElementById("page-content"),
   message: document.getElementById("message"), jobCard: document.getElementById("job-card"), jobStageNumber: document.getElementById("job-stage-number"),
   jobStage: document.getElementById("job-stage"), jobDetail: document.getElementById("job-detail"), jobProgress: document.getElementById("job-progress"), jobResult: document.getElementById("job-result"),
 };
@@ -19,7 +19,6 @@ function showMessage(text, type = "success") { elements.message.textContent = te
 function hideMessage() { elements.message.classList.add("is-hidden"); }
 function displayFolderName(path) { if (!path) return "尚未选择保存文件夹"; return path.replace(/[\\/]$/, "").split(/[\\/]/).pop() || path; }
 function setServiceState(online, detail = "") { elements.serviceDot.classList.toggle("is-online", online); elements.serviceDot.classList.toggle("is-offline", !online); elements.serviceLabel.textContent = online ? "本地服务已连接" : "本地服务未运行"; elements.saveLocationText.textContent = online ? displayFolderName(detail) : "请先运行 start.command"; }
-function updateWordCount() { const count = elements.pageContent.value.replace(/\s+/g, "").length; elements.pageWordCount.textContent = `${count.toLocaleString()} 字`; }
 function isVideoUrl(value) { try { const url = new URL(value); return /(^|\.)((youtube\.com)|(youtu\.be)|(vimeo\.com)|(bilibili\.com)|(soundcloud\.com))$/i.test(url.hostname) || /\.(mp3|mp4|m4a|webm|mov|wav|ogg)(?:$|\?)/i.test(url.pathname); } catch { return false; } }
 
 async function connect() {
@@ -30,12 +29,12 @@ async function connect() {
 async function chooseFolder() {
   if (!IS_EXTENSION) return showMessage("预览模式下无法切换文件夹。", "error");
   try { const response = await ClipperAPI.chooseFolder(); settings = response.settings; setServiceState(true, settings.save_root || "尚未选择保存文件夹"); showMessage("保存文件夹已更新。"); }
-  catch (error) { showMessage(error.message, "error"); }
+  catch (error) { if (!/取消选择文件夹/.test(error.message)) showMessage(error.message, "error"); }
 }
 
 async function getCurrentTab() { const [tab] = await chrome.tabs.query({ active:true, currentWindow:true }); if (!tab?.id || !/^https?:/i.test(tab.url || "")) throw new Error("该页面不允许扩展读取，请打开普通网页后重试"); return tab; }
 async function extractCurrentPage() {
-  try { const tab = await getCurrentTab(); elements.resourceUrl.value = tab.url; const result = await chrome.scripting.executeScript({ target:{ tabId:tab.id }, files:["page-extractor.js"] }); pageData = result?.[0]?.result; if (!pageData?.content) throw new Error("没有提取到网页正文"); elements.pageContent.value = pageData.content; elements.pagePreview.classList.remove("is-hidden"); updateWordCount(); elements.resourceSubmit.querySelector("span").textContent = "保存正文"; }
+  try { const tab = await getCurrentTab(); elements.resourceUrl.value = tab.url; const result = await chrome.scripting.executeScript({ target:{ tabId:tab.id }, files:["page-extractor.js"] }); pageData = result?.[0]?.result; if (!pageData?.content) throw new Error("没有提取到网页正文"); elements.pageContent.value = pageData.content; elements.pagePreview.classList.remove("is-hidden"); elements.resourceSubmit.querySelector("span").textContent = "保存正文"; }
   catch (error) { showMessage(`网页提取失败：${error.message}`, "error"); }
 }
 async function fillCurrentUrl() { try { const tab = await getCurrentTab(); elements.resourceUrl.value = tab.url; if (!isVideoUrl(tab.url)) await extractCurrentPage(); } catch (error) { showMessage(error.message, "error"); } }
@@ -56,11 +55,11 @@ function renderJob(job) { const [number,label,progress] = stageMap[job.stage] ||
 function pollJob(jobId) { clearTimeout(pollTimer); const tick = async () => { try { const job = await ClipperAPI.getMediaJob(jobId); elements.jobCard.classList.remove("is-hidden"); renderJob(job); if (["done","error"].includes(job.status)) { await ClipperAPI.storageRemove([ACTIVE_JOB_KEY]); elements.resourceSubmit.disabled = false; elements.resourceSubmit.querySelector("span").textContent = "保存到本地"; if (job.status === "done") showMessage(`转写完成：${job.result.filename}`); return; } pollTimer = setTimeout(tick, 1400); } catch (error) { showMessage(`无法读取任务状态：${error.message}`, "error"); } }; tick(); }
 async function restoreMediaJob() { const stored = await ClipperAPI.storageGet([ACTIVE_JOB_KEY]); if (stored[ACTIVE_JOB_KEY]) pollJob(stored[ACTIVE_JOB_KEY]); }
 
-function loadPreviewMode() { setServiceState(true, "~/Documents/Knowledge/Inbox"); elements.resourceUrl.value = "https://example.com/article"; elements.pageContent.value = "## 示例正文\n\n这里显示当前网页转换后的 Markdown 正文。"; elements.pagePreview.classList.remove("is-hidden"); elements.resourceSubmit.querySelector("span").textContent = "保存正文"; updateWordCount(); }
+function loadPreviewMode() { setServiceState(true, "~/Documents/Knowledge/Inbox"); elements.pageContent.value = "## 示例正文\n\n点击“本页”后，这里会显示当前网页转换后的 Markdown 正文。"; elements.pagePreview.classList.remove("is-hidden"); elements.resourceSubmit.querySelector("span").textContent = "保存正文"; }
 
 elements.openSettings.addEventListener("click", () => { if (IS_EXTENSION) chrome.runtime.openOptionsPage(); });
-elements.saveLocation.addEventListener("click", chooseFolder); elements.resourceForm.addEventListener("submit", submitResource); elements.pageContent.addEventListener("input", updateWordCount);
+elements.saveLocation.addEventListener("click", chooseFolder); elements.currentPage.addEventListener("click", fillCurrentUrl); elements.resourceForm.addEventListener("submit", submitResource);
 document.querySelectorAll(".mode-tab").forEach((tab) => tab.addEventListener("click", () => { activeMode = tab.dataset.mode; document.querySelectorAll(".mode-tab").forEach((item) => item.classList.toggle("is-active", item === tab)); elements.pagePreview.classList.toggle("is-hidden", activeMode !== "page" || !pageData); elements.jobCard.classList.toggle("is-hidden", activeMode !== "media"); elements.resourceSubmit.querySelector("span").textContent = activeMode === "media" ? "开始转写" : (pageData ? "保存正文" : "保存到本地"); }));
 
-async function init() { if (!IS_EXTENSION) return loadPreviewMode(); const online = await connect(); await fillCurrentUrl(); if (online) await restoreMediaJob(); }
+async function init() { if (!IS_EXTENSION) return loadPreviewMode(); const online = await connect(); if (online) await restoreMediaJob(); }
 init();

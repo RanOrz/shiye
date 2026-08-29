@@ -95,7 +95,7 @@ async function chooseFolder() {
     populate(response.settings);
     setMessage("文件夹已选择，设置已经保存。", false);
   } catch (error) {
-    setMessage(error.message, true);
+    if (!/取消选择文件夹/.test(error.message)) setMessage(error.message, true);
   } finally {
     ui.chooseFolder.disabled = false;
     ui.chooseFolder.textContent = "选择文件夹";

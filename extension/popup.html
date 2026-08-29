@@ -18,9 +18,9 @@
         <button class="mode-tab" type="button" data-mode="media">音视频转写</button>
       </nav>
       <form id="resource-form" class="resource-form">
-        <label class="url-field"><span class="sr-only">网页或音视频链接</span><input id="resource-url" type="url" autocomplete="off" spellcheck="false" placeholder="粘贴链接" required /></label>
+        <label class="url-field"><span class="sr-only">网页或音视频链接</span><input id="resource-url" type="url" autocomplete="off" spellcheck="false" placeholder="粘贴链接" required /><button id="use-current-page" class="current-button" type="button">本页</button></label>
       </form>
-      <section id="page-preview" class="content-section is-hidden"><div class="section-heading"><span>正文预览</span><span id="page-word-count"></span></div><textarea id="page-content" rows="7" aria-label="正文预览"></textarea></section>
+      <section id="page-preview" class="content-section is-hidden"><textarea id="page-content" rows="7" aria-label="网页正文"></textarea></section>
       <section id="job-card" class="job-card is-hidden" aria-live="polite"><div class="job-heading"><span id="job-stage-number">01</span><div><strong id="job-stage">等待处理</strong><p id="job-detail">任务已提交到本地服务</p></div></div><div class="progress-track"><span id="job-progress"></span></div><p id="job-result" class="job-result"></p></section>
       <button id="resource-submit" class="primary-button" type="submit" form="resource-form"><span>保存到本地</span><b>↗</b></button>
       <div id="message" class="message is-hidden" role="status"></div>
