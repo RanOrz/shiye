@@ -92,9 +92,9 @@
 
 **Steps:**
 1. Add the Manifest V3 action, `activeTab`, `scripting`, `storage`, and localhost host permission.
-2. Build the two-tab editorial popup and accessible status states.
+2. Build a compact single-input popup with saved-folder switching, a gear-only settings action, and accessible status states.
 3. Implement metadata extraction, DOM cleanup and HTML-to-Markdown conversion.
-4. Implement pairing, page preview, AI toggle, save action and job resume.
+4. Implement pairing, current-page URL shortcut,正文预览, automatic page/media routing, save action and job resume.
 5. Run `node --check` on JavaScript files; expect pass.
 6. Commit the popup slice.
 

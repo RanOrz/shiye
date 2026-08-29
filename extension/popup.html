@@ -8,100 +8,40 @@
   </head>
   <body>
     <main class="shell">
-      <header class="masthead">
-        <div>
-          <p class="eyebrow">LOCAL KNOWLEDGE PRESS</p>
-          <h1><span>拾</span>页</h1>
-        </div>
-        <button id="open-settings" class="icon-button" type="button" aria-label="打开设置" title="设置">⚙</button>
+      <header class="topbar">
+        <button id="save-location" class="location-button" type="button" title="切换保存文件夹" aria-label="切换保存文件夹">
+          <span class="location-mark" aria-hidden="true">↳</span>
+          <span id="save-location-text">选择保存文件夹</span>
+        </button>
+        <button id="open-settings" class="icon-button" type="button" aria-label="设置" title="设置">⚙︎</button>
       </header>
 
-      <section class="service-strip" aria-live="polite">
+      <section class="connection" aria-live="polite">
         <span id="service-dot" class="service-dot"></span>
-        <div class="service-copy">
-          <strong id="service-label">正在连接本地服务</strong>
-          <span id="save-location">检查保存位置…</span>
-        </div>
+        <span id="service-label">正在连接本地服务</span>
       </section>
 
-      <nav class="tabs" aria-label="工具选择">
-        <button class="tab is-active" type="button" data-panel="page-panel">
-          <span>01</span> 剪藏当前网页
+      <form id="resource-form" class="resource-form">
+        <label class="url-field">
+          <span class="sr-only">网页或音视频链接</span>
+          <input id="resource-url" type="url" autocomplete="off" spellcheck="false" placeholder="粘贴链接，或使用当前页面" required />
+          <button id="use-current-page" class="current-button" type="button" title="填入当前页面 URL（⌘⇧M）">当前页</button>
+        </label>
+        <p class="shortcut-hint"><kbd>⌘⇧M</kbd> 打开并填入当前页面 URL</p>
+        <button id="resource-submit" class="primary-button" type="submit">
+          <span>保存到本地</span><b>↗</b>
         </button>
-        <button class="tab" type="button" data-panel="media-panel">
-          <span>02</span> 音视频转写
-        </button>
-      </nav>
+      </form>
 
-      <section id="page-panel" class="panel is-active">
-        <div id="page-loading" class="loading-block">
-          <span class="loader-mark">↻</span>
-          <p>正在整理当前页面…</p>
+      <section id="page-preview" class="content-section is-hidden">
+        <div class="section-heading">
+          <span>正文预览</span>
+          <span id="page-word-count"></span>
         </div>
-
-        <form id="page-form" class="stack is-hidden">
-          <label class="field">
-            <span>标题</span>
-            <input id="page-title" type="text" autocomplete="off" required />
-          </label>
-
-          <div class="field-row">
-            <label class="field">
-              <span>作者</span>
-              <input id="page-author" type="text" autocomplete="off" />
-            </label>
-            <label class="field field-date">
-              <span>发布日期</span>
-              <input id="page-published" type="text" placeholder="YYYY-MM-DD" autocomplete="off" />
-            </label>
-          </div>
-
-          <label class="field">
-            <span>标签 <small>用逗号分隔</small></span>
-            <input id="page-tags" type="text" value="inbox, 网页剪藏" autocomplete="off" />
-          </label>
-
-          <label class="field preview-field">
-            <span>Markdown 正文 <small id="page-word-count"></small></span>
-            <textarea id="page-content" rows="5" required></textarea>
-          </label>
-
-          <label class="switch-row">
-            <input id="page-ai" type="checkbox" />
-            <span class="switch" aria-hidden="true"></span>
-            <span><strong>AI 整理</strong><small>生成摘要、核心要点和标签</small></span>
-          </label>
-
-          <button id="save-page" class="primary-button" type="submit">
-            <span>保存到本地</span><b>→</b>
-          </button>
-        </form>
+        <textarea id="page-content" rows="7" aria-label="正文预览"></textarea>
       </section>
 
-      <section id="media-panel" class="panel">
-        <form id="media-form" class="stack">
-          <div class="media-intro">
-            <span class="issue-number">MEDIA / 02</span>
-            <p>粘贴公开音视频链接。优先读取现成字幕，没有字幕时自动调用本地 Whisper。</p>
-          </div>
-
-          <label class="field">
-            <span>音视频链接</span>
-            <textarea id="media-url" class="url-input" rows="3" placeholder="https://youtu.be/…" required></textarea>
-          </label>
-
-          <label class="switch-row">
-            <input id="media-ai" type="checkbox" />
-            <span class="switch" aria-hidden="true"></span>
-            <span><strong>AI 整理</strong><small>保留全文，并增加摘要与要点</small></span>
-          </label>
-
-          <button id="start-media" class="primary-button" type="submit">
-            <span>开始转写</span><b>→</b>
-          </button>
-        </form>
-
-        <div id="job-card" class="job-card is-hidden" aria-live="polite">
+      <section id="job-card" class="job-card is-hidden" aria-live="polite">
           <div class="job-heading">
             <span id="job-stage-number">01</span>
             <div>
@@ -116,10 +56,6 @@
 
       <div id="message" class="message is-hidden" role="status"></div>
 
-      <footer class="footer-line">
-        <span>Markdown stays yours.</span>
-        <span>v0.1</span>
-      </footer>
     </main>
 
     <script src="api-client.js"></script>
