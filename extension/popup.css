@@ -2,21 +2,24 @@
 * { box-sizing:border-box; }
 html,body { width:360px; min-height:238px; margin:0; color:var(--ink); background:var(--paper); font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Arial,sans-serif; }
 button,input,textarea { font:inherit; } button { color:inherit; }
-.shell { min-height:238px; padding:12px 14px 14px; }
+.shell { min-height:238px; padding:10px 14px 14px; }
 .topbar { display:flex; align-items:center; justify-content:space-between; gap:10px; }
 .location-button { display:inline-flex; min-width:0; max-width:290px; align-items:center; gap:6px; border:0; padding:0; overflow:hidden; background:transparent; color:var(--muted); font-size:11px; cursor:pointer; text-align:left; }
 .location-button:hover,.location-button:focus-visible { color:var(--ink); } .location-mark { color:var(--signal); font-size:16px; line-height:1; } #save-location-text { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .icon-button { display:grid; width:28px; height:28px; flex:0 0 28px; place-items:center; border:1px solid var(--rule); border-radius:50%; background:transparent; color:var(--muted); font-size:15px; cursor:pointer; }
 .icon-button:hover,.icon-button:focus-visible { border-color:var(--ink); color:var(--ink); }
-.connection { display:flex; align-items:center; gap:7px; margin-top:12px; color:var(--muted); font-size:10px; }
+.connection { display:flex; align-items:center; gap:7px; color:var(--muted); font-size:10px; }
 .service-dot { width:6px; height:6px; border-radius:50%; background:#cf9f39; } .service-dot.is-online { background:var(--signal); } .service-dot.is-offline { background:#cc5d4a; }
-.resource-form { margin-top:24px; } .url-field { display:flex; align-items:stretch; border-bottom:1px solid var(--ink); }
+.mode-tabs { display:grid; grid-template-columns:1fr 1fr; gap:4px; margin-top:15px; padding:3px; border-radius:6px; background:#e9ece7; }
+.mode-tab { border:0; border-radius:4px; padding:7px 4px; background:transparent; color:var(--muted); font-size:11px; cursor:pointer; }
+.mode-tab.is-active { background:var(--white); color:var(--ink); box-shadow:0 1px 3px rgba(32,37,33,.1); }
+.resource-form { margin-top:18px; } .url-field { display:flex; align-items:stretch; border-bottom:1px solid var(--ink); }
 .url-field input { min-width:0; flex:1; height:38px; border:0; outline:0; background:transparent; color:var(--ink); font-size:16px; }
 .url-field input::placeholder { color:#a3aaa4; } .url-field input:focus { box-shadow:none; }
 .current-button { align-self:center; border:0; border-radius:4px; padding:5px 7px; background:var(--signal-soft); color:var(--signal); font-size:10px; cursor:pointer; }
 .current-button:hover,.current-button:focus-visible { background:#d5e7dd; }
 .shortcut-hint { margin:7px 0 16px; color:var(--muted); font-size:10px; } kbd { border:1px solid var(--rule); border-radius:3px; padding:1px 4px; background:var(--white); font-size:9px; }
-.primary-button { display:flex; width:100%; min-height:38px; align-items:center; justify-content:space-between; border:0; border-radius:5px; padding:0 13px; background:var(--ink); color:var(--white); font-size:13px; cursor:pointer; }
+.primary-button { display:flex; width:100%; min-height:38px; margin-top:18px; align-items:center; justify-content:space-between; border:0; border-radius:5px; padding:0 13px; background:var(--ink); color:var(--white); font-size:13px; cursor:pointer; }
 .primary-button:hover:not(:disabled),.primary-button:focus-visible:not(:disabled) { background:#334038; } .primary-button:disabled { cursor:wait; opacity:.55; } .primary-button b { color:#9ed0b6; font-size:17px; }
 .content-section { margin-top:18px; } .section-heading { display:flex; justify-content:space-between; margin-bottom:6px; color:var(--muted); font-size:10px; }
 #page-content { display:block; width:100%; min-height:116px; max-height:190px; resize:vertical; border:1px solid var(--rule); border-radius:4px; padding:9px 10px; outline:0; background:var(--white); color:var(--ink); font-family:ui-monospace,"SFMono-Regular",Menlo,monospace; font-size:11px; line-height:1.5; }

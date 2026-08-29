@@ -8,57 +8,23 @@
   </head>
   <body>
     <main class="shell">
+      <section class="connection" aria-live="polite"><span id="service-dot" class="service-dot"></span><span id="service-label">正在连接本地服务</span></section>
       <header class="topbar">
-        <button id="save-location" class="location-button" type="button" title="切换保存文件夹" aria-label="切换保存文件夹">
-          <span class="location-mark" aria-hidden="true">↳</span>
-          <span id="save-location-text">选择保存文件夹</span>
-        </button>
+        <button id="save-location" class="location-button" type="button" title="切换保存文件夹" aria-label="切换保存文件夹"><span class="location-mark" aria-hidden="true">📁</span><span id="save-location-text">选择保存文件夹</span></button>
         <button id="open-settings" class="icon-button" type="button" aria-label="设置" title="设置">⚙︎</button>
       </header>
-
-      <section class="connection" aria-live="polite">
-        <span id="service-dot" class="service-dot"></span>
-        <span id="service-label">正在连接本地服务</span>
-      </section>
-
+      <nav class="mode-tabs" aria-label="内容类型">
+        <button class="mode-tab is-active" type="button" data-mode="page">网页正文</button>
+        <button class="mode-tab" type="button" data-mode="media">音视频转写</button>
+      </nav>
       <form id="resource-form" class="resource-form">
-        <label class="url-field">
-          <span class="sr-only">网页或音视频链接</span>
-          <input id="resource-url" type="url" autocomplete="off" spellcheck="false" placeholder="粘贴链接，或使用当前页面" required />
-          <button id="use-current-page" class="current-button" type="button" title="填入当前页面 URL（⌘⇧M）">当前页</button>
-        </label>
-        <p class="shortcut-hint"><kbd>⌘⇧M</kbd> 打开并填入当前页面 URL</p>
-        <button id="resource-submit" class="primary-button" type="submit">
-          <span>保存到本地</span><b>↗</b>
-        </button>
+        <label class="url-field"><span class="sr-only">网页或音视频链接</span><input id="resource-url" type="url" autocomplete="off" spellcheck="false" placeholder="粘贴链接" required /></label>
       </form>
-
-      <section id="page-preview" class="content-section is-hidden">
-        <div class="section-heading">
-          <span>正文预览</span>
-          <span id="page-word-count"></span>
-        </div>
-        <textarea id="page-content" rows="7" aria-label="正文预览"></textarea>
-      </section>
-
-      <section id="job-card" class="job-card is-hidden" aria-live="polite">
-          <div class="job-heading">
-            <span id="job-stage-number">01</span>
-            <div>
-              <strong id="job-stage">等待处理</strong>
-              <p id="job-detail">任务已提交到本地服务</p>
-            </div>
-          </div>
-          <div class="progress-track"><span id="job-progress"></span></div>
-          <p id="job-result" class="job-result"></p>
-        </div>
-      </section>
-
+      <section id="page-preview" class="content-section is-hidden"><div class="section-heading"><span>正文预览</span><span id="page-word-count"></span></div><textarea id="page-content" rows="7" aria-label="正文预览"></textarea></section>
+      <section id="job-card" class="job-card is-hidden" aria-live="polite"><div class="job-heading"><span id="job-stage-number">01</span><div><strong id="job-stage">等待处理</strong><p id="job-detail">任务已提交到本地服务</p></div></div><div class="progress-track"><span id="job-progress"></span></div><p id="job-result" class="job-result"></p></section>
+      <button id="resource-submit" class="primary-button" type="submit" form="resource-form"><span>保存到本地</span><b>↗</b></button>
       <div id="message" class="message is-hidden" role="status"></div>
-
     </main>
-
-    <script src="api-client.js"></script>
-    <script src="popup.js"></script>
+    <script src="api-client.js"></script><script src="popup.js"></script>
   </body>
 </html>
