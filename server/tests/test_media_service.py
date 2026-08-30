@@ -53,7 +53,7 @@ class MediaServiceTests(unittest.TestCase):
         progress = []
         with (
             patch.object(service, "_extract_metadata", return_value={"title": "演讲", "author": "频道"}),
-            patch.object(service, "_fetch_youtube_transcript", return_value="字幕正文") as captions,
+            patch.object(service, "_fetch_youtube_segments", return_value=[{"start": 12, "text": "字幕正文"}]) as captions,
             patch.object(service, "_download_and_transcribe") as fallback,
             patch(
                 "server.services.media_service.validate_public_url",
@@ -77,8 +77,8 @@ class MediaServiceTests(unittest.TestCase):
         )
         with (
             patch.object(service, "_extract_metadata", return_value={"title": "访谈", "author": ""}),
-            patch.object(service, "_fetch_youtube_transcript", return_value=""),
-            patch.object(service, "_fetch_ytdlp_subtitle", return_value=""),
+            patch.object(service, "_fetch_youtube_segments", return_value=[]),
+            patch.object(service, "_fetch_ytdlp_subtitle", return_value=[]),
             patch.object(service, "_download_and_transcribe", return_value=fallback_result) as fallback,
             patch(
                 "server.services.media_service.validate_public_url",
@@ -94,7 +94,7 @@ class MediaServiceTests(unittest.TestCase):
         service = MediaService()
         with (
             patch.object(service, "_extract_metadata", return_value={"title": "哔哩哔哩视频", "author": "UP主"}),
-            patch.object(service, "_fetch_ytdlp_subtitle", return_value="字幕正文"),
+            patch.object(service, "_fetch_ytdlp_subtitle", return_value=[{"start": 0, "text": "字幕正文"}]),
             patch.object(service, "_download_and_transcribe") as fallback,
             patch("server.services.media_service.validate_public_url", side_effect=lambda url: url),
         ):

@@ -86,10 +86,21 @@ def render_page_markdown(
 
 
 def render_media_markdown(
-    metadata: dict[str, Any], transcript: str, ai_result: dict[str, Any] | None = None
+    metadata: dict[str, Any], transcript: str, ai_result: dict[str, Any] | None = None,
+    segments: list[dict[str, Any]] | None = None,
 ) -> str:
     title = str(metadata.get("title") or "未命名").strip()
     lines = [_frontmatter(metadata, "media", ai_result), f"# {title}", ""]
     lines.extend(_ai_sections(ai_result))
-    lines.extend(["## 完整转写", "", transcript.strip(), ""])
+    lines.extend(["## 完整转写", ""])
+    if segments:
+        for segment in segments:
+            seconds = int(float(segment.get("start", 0)))
+            stamp = f"{seconds // 3600:02d}:{seconds % 3600 // 60:02d}:{seconds % 60:02d}"
+            text = str(segment.get("text", "")).strip()
+            if text:
+                lines.append(f"[{stamp}] {text}")
+        lines.append("")
+    else:
+        lines.extend([transcript.strip(), ""])
     return "\n".join(lines).rstrip() + "\n"

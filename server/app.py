@@ -96,7 +96,7 @@ def create_app(
             "duration": result.duration,
             "transcription_method": result.method,
         }
-        markdown = render_media_markdown(metadata, result.transcript, ai_result)
+        markdown = render_media_markdown(metadata, result.transcript, ai_result, result.segments)
         path = StorageService(settings.get("save_root", "")).save_markdown(
             settings.get("media_subdir", "视频转写"), result.title, markdown
         )

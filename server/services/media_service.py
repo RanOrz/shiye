@@ -5,7 +5,7 @@ import re
 import socket
 import tempfile
 import threading
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Callable
 from urllib.parse import parse_qs, urlparse
@@ -29,6 +29,7 @@ class MediaResult:
     transcript: str
     method: str
     duration: int | float | None = None
+    segments: list[dict[str, Any]] = field(default_factory=list)
 
 
 def extract_youtube_id(url: str) -> str | None:
@@ -101,7 +102,8 @@ class MediaService:
 
         if youtube_id:
             notify("captions", "正在查找视频字幕")
-            transcript = self._fetch_youtube_transcript(youtube_id)
+            segments = self._fetch_youtube_segments(youtube_id)
+            transcript = " ".join(item["text"] for item in segments)
             if transcript:
                 return MediaResult(
                     title=str(metadata.get("title") or youtube_id),
@@ -109,17 +111,19 @@ class MediaService:
                     transcript=transcript,
                     method="captions",
                     duration=metadata.get("duration"),
+                    segments=segments,
                 )
 
         notify("captions", "正在查找平台字幕")
-        transcript = self._fetch_ytdlp_subtitle(safe_url)
-        if transcript:
+        segments = self._fetch_ytdlp_subtitle(safe_url)
+        if segments:
             return MediaResult(
                 title=str(metadata.get("title") or "未命名音视频"),
                 author=str(metadata.get("author") or ""),
-                transcript=transcript,
+                transcript=" ".join(item["text"] for item in segments),
                 method="captions",
                 duration=metadata.get("duration"),
+                segments=segments,
             )
 
         notify("downloading", "没有可用字幕，正在提取音频")
@@ -144,18 +148,22 @@ class MediaService:
 
     @staticmethod
     def _fetch_youtube_transcript(video_id: str) -> str:
+        return " ".join(item["text"] for item in MediaService._fetch_youtube_segments(video_id))
+
+    @staticmethod
+    def _fetch_youtube_segments(video_id: str) -> list[dict[str, Any]]:
         try:
             from youtube_transcript_api import YouTubeTranscriptApi
 
             transcript = YouTubeTranscriptApi().fetch(
                 video_id, languages=["zh-Hans", "zh-CN", "zh-TW", "zh", "en"]
             )
-            return " ".join(item.text.strip() for item in transcript if item.text.strip())
+            return [{"start": float(item.start), "text": item.text.strip()} for item in transcript if item.text.strip()]
         except Exception:
             return ""
 
     @staticmethod
-    def _fetch_ytdlp_subtitle(url: str) -> str:
+    def _fetch_ytdlp_subtitle(url: str) -> list[dict[str, Any]]:
         """Try platform-provided subtitles without downloading the media stream."""
         try:
             import yt_dlp
@@ -177,17 +185,24 @@ class MediaService:
                     ydl.download([url])
                 subtitle_files = sorted(Path(temp_dir).glob("*.vtt"), key=lambda path: path.stat().st_size, reverse=True)
                 if not subtitle_files:
-                    return ""
+                    return []
                 return MediaService._parse_vtt(subtitle_files[0].read_text(encoding="utf-8", errors="ignore"))
         except Exception:
-            return ""
+            return []
 
     @staticmethod
-    def _parse_vtt(value: str) -> str:
+    def _parse_vtt(value: str) -> list[dict[str, Any]]:
+        segments: list[dict[str, Any]] = []
         lines: list[str] = []
         previous = ""
+        start = 0.0
         for raw in value.splitlines():
             line = raw.strip()
+            if "-->" in line:
+                stamp = line.split("-->", 1)[0].strip().replace(",", ".")
+                parts = stamp.split(":")
+                start = sum(float(part) * (60 ** (len(parts) - index - 1)) for index, part in enumerate(parts))
+                continue
             if not line or line == "WEBVTT" or "-->" in line or line.isdigit() or line.startswith(("NOTE", "STYLE", "REGION")):
                 continue
             line = re.sub(r"<[^>]+>", "", line)
@@ -196,7 +211,8 @@ class MediaService:
             if line and line != previous:
                 lines.append(line)
                 previous = line
-        return " ".join(lines).strip()
+                segments.append({"start": start, "text": line})
+        return segments
 
     def _download_and_transcribe(
         self,
@@ -240,6 +256,7 @@ class MediaService:
                     transcript=transcript,
                     method="whisper",
                     duration=info.get("duration") or metadata.get("duration"),
+                    segments=[{"start": float(item.get("start", 0)), "text": str(item.get("text", "")).strip()} for item in result.get("segments", []) if str(item.get("text", "")).strip()],
                 )
         except MediaServiceError:
             raise
