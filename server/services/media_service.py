@@ -15,7 +15,9 @@ ProgressCallback = Callable[[str, str], None]
 
 
 class MediaServiceError(RuntimeError):
-    pass
+    def __init__(self, message: str, code: str = "MEDIA_ERROR"):
+        super().__init__(message)
+        self.code = code
 
 
 @dataclass
@@ -131,7 +133,7 @@ class MediaService:
                 "duration": info.get("duration"),
             }
         except Exception as exc:
-            raise MediaServiceError(f"无法读取音视频信息：{exc}") from exc
+            raise MediaServiceError(f"无法读取音视频信息：{exc}", "MEDIA_METADATA") from exc
 
     @staticmethod
     def _fetch_youtube_transcript(video_id: str) -> str:
@@ -219,7 +221,7 @@ class MediaService:
                 result = model.transcribe(str(audio_path), fp16=False)
                 transcript = str(result.get("text") or "").strip()
                 if not transcript:
-                    raise MediaServiceError("Whisper 没有识别出文字")
+                    raise MediaServiceError("Whisper 没有识别出文字", "MEDIA_TRANSCRIBE_EMPTY")
                 return MediaResult(
                     title=str(info.get("title") or metadata.get("title") or "未命名音视频"),
                     author=str(
@@ -237,13 +239,13 @@ class MediaService:
         except Exception as exc:
             detail = str(exc)
             if "403" in detail or "Forbidden" in detail:
-                raise MediaServiceError("平台拒绝下载媒体（HTTP 403）。请确认视频可公开访问，或在浏览器登录后重试") from exc
-            raise MediaServiceError(f"音视频下载或转写失败：{exc}") from exc
+                raise MediaServiceError("平台拒绝下载媒体（HTTP 403）。请确认视频可公开访问，或在浏览器登录后重试", "MEDIA_DOWNLOAD_403") from exc
+            raise MediaServiceError(f"音视频下载或转写失败：{exc}", "MEDIA_DOWNLOAD_OR_TRANSCRIBE") from exc
 
     @classmethod
     def _load_whisper_model(cls, model_name: str):
         if model_name not in {"tiny", "base", "small", "medium", "large"}:
-            raise MediaServiceError("Whisper 模型设置无效")
+            raise MediaServiceError("Whisper 模型设置无效", "MEDIA_WHISPER_MODEL")
         with cls._model_lock:
             if model_name not in cls._models:
                 import whisper

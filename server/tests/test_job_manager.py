@@ -32,6 +32,8 @@ class JobManagerTests(unittest.TestCase):
 
         self.assertEqual(job["status"], "error")
         self.assertIn("bad media", job["error"])
+        self.assertEqual(job["error_code"], "MEDIA_UNKNOWN")
+        self.assertEqual(job["error_stage"], "starting")
 
     def test_unknown_job_returns_none(self):
         manager = JobManager(lambda payload, progress: payload)

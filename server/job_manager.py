@@ -11,6 +11,20 @@ from typing import Any, Callable
 Processor = Callable[[dict[str, Any], Callable[[str, str], None]], dict[str, Any]]
 
 
+def error_code(exc: Exception) -> str:
+    explicit = getattr(exc, "code", "")
+    if explicit:
+        return str(explicit)
+    detail = str(exc).lower()
+    if "403" in detail or "forbidden" in detail:
+        return "MEDIA_DOWNLOAD_403"
+    if "whisper" in detail:
+        return "MEDIA_TRANSCRIBE"
+    if "subtitle" in detail or "字幕" in detail:
+        return "MEDIA_CAPTIONS"
+    return "MEDIA_UNKNOWN"
+
+
 class JobManager:
     def __init__(self, processor: Processor):
         self.processor = processor
@@ -33,6 +47,9 @@ class JobManager:
                 "updated": now,
                 "result": None,
                 "error": None,
+                "error_code": None,
+                "error_stage": None,
+                "error_detail": None,
             }
         self.queue.put((job_id, copy.deepcopy(payload)))
         return job_id
@@ -70,12 +87,18 @@ class JobManager:
                     result=result,
                 )
             except Exception as exc:
+                with self.lock:
+                    failed_stage = self.jobs.get(job_id, {}).get("stage", "unknown")
+                code = error_code(exc)
                 self._update(
                     job_id,
                     status="error",
                     stage="error",
                     detail="处理失败",
-                    error=str(exc),
+                    error=f"[{code}] {exc}",
+                    error_code=code,
+                    error_stage=failed_stage,
+                    error_detail=str(exc),
                 )
             finally:
                 self.queue.task_done()
