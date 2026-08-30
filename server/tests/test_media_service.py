@@ -36,6 +36,18 @@ class MediaServiceTests(unittest.TestCase):
             with self.assertRaises(MediaServiceError):
                 validate_public_url("https://internal.example")
 
+    def test_ignores_vpn_placeholder_ipv6_only_for_media_hosts(self):
+        rows = [
+            (socket.AF_INET6, socket.SOCK_STREAM, 6, "", ("2001::1", 443, 0, 0)),
+            (socket.AF_INET, socket.SOCK_STREAM, 6, "", ("142.250.1.1", 443)),
+        ]
+        with patch("server.services.media_service.socket.getaddrinfo", return_value=rows):
+            self.assertEqual(validate_public_url("https://youtube.com/watch?v=40M-66LgKTI"), "https://youtube.com/watch?v=40M-66LgKTI")
+        with patch("server.services.media_service.socket.getaddrinfo", return_value=rows):
+            with self.assertRaises(MediaServiceError) as blocked:
+                validate_public_url("https://example.com/video")
+        self.assertEqual(blocked.exception.code, "MEDIA_URL_PRIVATE")
+
     def test_uses_youtube_subtitles_before_whisper(self):
         service = MediaService()
         progress = []

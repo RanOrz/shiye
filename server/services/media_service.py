@@ -12,6 +12,8 @@ from urllib.parse import parse_qs, urlparse
 
 
 ProgressCallback = Callable[[str, str], None]
+VPN_PLACEHOLDER_IPV6 = {"2001::1"}
+MEDIA_HOST_SUFFIXES = ("youtube.com", "youtu.be", "bilibili.com", "b23.tv")
 
 
 class MediaServiceError(RuntimeError):
@@ -57,10 +59,14 @@ def validate_public_url(url: str, resolve_dns: bool = True) -> str:
     if host == "localhost" or host.endswith(".local"):
         raise MediaServiceError("不允许访问本机或局域网地址", "MEDIA_URL_PRIVATE")
 
+    trusted_media_host = any(host == suffix or host.endswith(f".{suffix}") for suffix in MEDIA_HOST_SUFFIXES)
+
     def ensure_global(address: str) -> None:
         try:
             ip = ipaddress.ip_address(address)
         except ValueError:
+            return
+        if trusted_media_host and ip.version == 6 and str(ip) in VPN_PLACEHOLDER_IPV6:
             return
         if not ip.is_global:
             raise MediaServiceError("不允许访问本机或局域网地址", "MEDIA_URL_PRIVATE")
