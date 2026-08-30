@@ -28,5 +28,6 @@ button,input,textarea { font:inherit; } button { color:inherit; }
 .job-heading > span { color:var(--signal); font-size:18px; font-weight:700; } .job-heading strong { font-size:12px; } .job-heading p,.job-result { margin:3px 0 0; color:var(--muted); font-size:10px; line-height:1.4; }
 .progress-track { height:4px; margin-top:11px; overflow:hidden; border-radius:4px; background:var(--signal-soft); } .progress-track span { display:block; width:8%; height:100%; background:var(--signal); transition:width 300ms ease; } .job-result { overflow-wrap:anywhere; }
 .message { margin-top:12px; border-radius:4px; padding:8px 10px; background:var(--signal-soft); color:#2f5946; font-size:11px; line-height:1.4; } .message.is-error { background:#fae9e5; color:#9a3e30; }
+.message a,.job-result a { color:inherit; font-weight:700; text-decoration:underline; text-underline-offset:2px; cursor:pointer; }
 .is-hidden { display:none !important; } .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
 @media (prefers-reduced-motion:reduce) { *,*::before,*::after { transition-duration:.01ms !important; } }

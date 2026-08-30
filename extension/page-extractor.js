@@ -124,6 +124,9 @@
     .forEach((element) => element.remove());
 
   const markdown = toMarkdown(sourceRoot)
+    // Remove standalone navigation/redirect URLs that often appear above article text.
+    .replace(/^\s*(?:[-*]\s*)?(?:https?:\/\/|www\.)\S+\s*$/gim, "")
+    .replace(/^\s*(?:[-*]\s*)?\[[^\]]*\]\(https?:\/\/[^)]+\)\s*$/gim, "")
     .replace(/[ \t]+\n/g, "\n")
     .replace(/\n{3,}/g, "\n\n")
     .trim();
