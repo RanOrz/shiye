@@ -102,6 +102,17 @@ class MediaService:
                     duration=metadata.get("duration"),
                 )
 
+        notify("captions", "正在查找平台字幕")
+        transcript = self._fetch_ytdlp_subtitle(safe_url)
+        if transcript:
+            return MediaResult(
+                title=str(metadata.get("title") or "未命名音视频"),
+                author=str(metadata.get("author") or ""),
+                transcript=transcript,
+                method="captions",
+                duration=metadata.get("duration"),
+            )
+
         notify("downloading", "没有可用字幕，正在提取音频")
         return self._download_and_transcribe(safe_url, whisper_model, metadata, notify)
 
@@ -133,6 +144,50 @@ class MediaService:
             return " ".join(item.text.strip() for item in transcript if item.text.strip())
         except Exception:
             return ""
+
+    @staticmethod
+    def _fetch_ytdlp_subtitle(url: str) -> str:
+        """Try platform-provided subtitles without downloading the media stream."""
+        try:
+            import yt_dlp
+
+            with tempfile.TemporaryDirectory(prefix="local-web-clipper-captions-") as temp_dir:
+                output_template = str(Path(temp_dir) / "captions.%(ext)s")
+                options = {
+                    "quiet": True,
+                    "no_warnings": True,
+                    "skip_download": True,
+                    "writesubtitles": True,
+                    "writeautomaticsub": True,
+                    "subtitleslangs": ["zh-Hans", "zh-CN", "zh-TW", "zh", "en"],
+                    "subtitlesformat": "vtt",
+                    "outtmpl": output_template,
+                    "noplaylist": True,
+                }
+                with yt_dlp.YoutubeDL(options) as ydl:
+                    ydl.download([url])
+                subtitle_files = sorted(Path(temp_dir).glob("*.vtt"), key=lambda path: path.stat().st_size, reverse=True)
+                if not subtitle_files:
+                    return ""
+                return MediaService._parse_vtt(subtitle_files[0].read_text(encoding="utf-8", errors="ignore"))
+        except Exception:
+            return ""
+
+    @staticmethod
+    def _parse_vtt(value: str) -> str:
+        lines: list[str] = []
+        previous = ""
+        for raw in value.splitlines():
+            line = raw.strip()
+            if not line or line == "WEBVTT" or "-->" in line or line.isdigit() or line.startswith(("NOTE", "STYLE", "REGION")):
+                continue
+            line = re.sub(r"<[^>]+>", "", line)
+            line = re.sub(r"&(?:amp|lt|gt|quot);", lambda match: {"&amp;": "&", "&lt;": "<", "&gt;": ">", "&quot;": '"'}[match.group(0)], line)
+            line = re.sub(r"\s+", " ", line).strip()
+            if line and line != previous:
+                lines.append(line)
+                previous = line
+        return " ".join(lines).strip()
 
     def _download_and_transcribe(
         self,
@@ -180,6 +235,9 @@ class MediaService:
         except MediaServiceError:
             raise
         except Exception as exc:
+            detail = str(exc)
+            if "403" in detail or "Forbidden" in detail:
+                raise MediaServiceError("平台拒绝下载媒体（HTTP 403）。请确认视频可公开访问，或在浏览器登录后重试") from exc
             raise MediaServiceError(f"音视频下载或转写失败：{exc}") from exc
 
     @classmethod
@@ -199,4 +257,3 @@ class MediaService:
         if not candidates:
             raise MediaServiceError("没有找到下载后的音频文件")
         return max(candidates, key=lambda path: path.stat().st_size)
-

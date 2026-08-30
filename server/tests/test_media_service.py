@@ -64,6 +64,7 @@ class MediaServiceTests(unittest.TestCase):
         with (
             patch.object(service, "_extract_metadata", return_value={"title": "访谈", "author": ""}),
             patch.object(service, "_fetch_youtube_transcript", return_value=""),
+            patch.object(service, "_fetch_ytdlp_subtitle", return_value=""),
             patch.object(service, "_download_and_transcribe", return_value=fallback_result) as fallback,
             patch(
                 "server.services.media_service.validate_public_url",
@@ -74,6 +75,20 @@ class MediaServiceTests(unittest.TestCase):
 
         self.assertEqual(result.transcript, "本地转写")
         fallback.assert_called_once()
+
+    def test_supports_bilibili_subtitles_before_whisper(self):
+        service = MediaService()
+        with (
+            patch.object(service, "_extract_metadata", return_value={"title": "哔哩哔哩视频", "author": "UP主"}),
+            patch.object(service, "_fetch_ytdlp_subtitle", return_value="字幕正文"),
+            patch.object(service, "_download_and_transcribe") as fallback,
+            patch("server.services.media_service.validate_public_url", side_effect=lambda url: url),
+        ):
+            result = service.transcribe("https://www.bilibili.com/video/BV1xx411c7mD", "base")
+
+        self.assertEqual(result.transcript, "字幕正文")
+        self.assertEqual(result.method, "captions")
+        fallback.assert_not_called()
 
 
 if __name__ == "__main__":
