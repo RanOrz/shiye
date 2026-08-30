@@ -95,6 +95,15 @@
   };
 
   const selected = window.getSelection();
+  const noisePattern = /(comment|评论|advert|广告|sponsor|赞助|推荐|related|share|分享|subscribe|订阅|cookie|breadcrumb|面包屑|sidebar|侧栏|登录|注册|newsletter|newsletter)/i;
+  const candidateScore = (node) => {
+    const text = cleanText(node.textContent || "");
+    if (text.length < 120) return -1;
+    const paragraphs = node.querySelectorAll("p").length;
+    const links = [...node.querySelectorAll("a")].reduce((sum, link) => sum + cleanText(link.textContent || "").length, 0);
+    const linkRatio = text.length ? links / text.length : 1;
+    return Math.min(text.length, 12000) + paragraphs * 160 - linkRatio * 1800;
+  };
   let sourceRoot;
   if (selected && !selected.isCollapsed && cleanText(selected.toString()).length > 30) {
     sourceRoot = document.createElement("div");
@@ -102,12 +111,16 @@
       sourceRoot.appendChild(selected.getRangeAt(index).cloneContents());
     }
   } else {
-    const candidate = document.querySelector("article, main, [role='main'], .post-content, .article-content, .entry-content") || document.body;
+    const candidates = [...document.querySelectorAll("article, main, [role='main'], .post-content, .article-content, .entry-content, .post, .article")];
+    const candidate = candidates.sort((a, b) => candidateScore(b) - candidateScore(a))[0] || document.body;
     sourceRoot = candidate.cloneNode(true);
   }
 
   sourceRoot
     .querySelectorAll("script, style, noscript, template, nav, footer, aside, form, button, input, select, textarea, iframe, [aria-hidden='true'], .advertisement, .ads, .cookie-banner, .comments")
+    .forEach((element) => element.remove());
+  [...sourceRoot.querySelectorAll("*")]
+    .filter((element) => noisePattern.test(`${element.id} ${element.className} ${element.getAttribute("aria-label") || ""}`))
     .forEach((element) => element.remove());
 
   const markdown = toMarkdown(sourceRoot)

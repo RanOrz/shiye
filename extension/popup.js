@@ -34,10 +34,10 @@ async function chooseFolder() {
 
 async function getCurrentTab() { const [tab] = await chrome.tabs.query({ active:true, currentWindow:true }); if (!tab?.id || !/^https?:/i.test(tab.url || "")) throw new Error("该页面不允许扩展读取，请打开普通网页后重试"); return tab; }
 async function extractCurrentPage() {
-  try { const tab = await getCurrentTab(); elements.resourceUrl.value = tab.url; const result = await chrome.scripting.executeScript({ target:{ tabId:tab.id }, files:["page-extractor.js"] }); pageData = result?.[0]?.result; if (!pageData?.content) throw new Error("没有提取到网页正文"); elements.pageContent.value = pageData.content; elements.pagePreview.classList.remove("is-hidden"); elements.resourceSubmit.querySelector("span").textContent = "保存正文"; }
+  try { const tab = await getCurrentTab(); const result = await chrome.scripting.executeScript({ target:{ tabId:tab.id }, files:["page-extractor.js"] }); pageData = result?.[0]?.result; if (!pageData?.content) throw new Error("没有提取到网页正文"); elements.resourceUrl.value = ""; elements.resourceUrl.placeholder = "本页已读取，可直接保存"; elements.pageContent.value = pageData.content; elements.pagePreview.classList.remove("is-hidden"); elements.resourceSubmit.querySelector("span").textContent = "保存正文"; }
   catch (error) { showMessage(`网页提取失败：${error.message}`, "error"); }
 }
-async function fillCurrentUrl() { try { const tab = await getCurrentTab(); elements.resourceUrl.value = tab.url; if (!isVideoUrl(tab.url)) await extractCurrentPage(); } catch (error) { showMessage(error.message, "error"); } }
+async function fillCurrentUrl() { try { const tab = await getCurrentTab(); if (isVideoUrl(tab.url)) { elements.resourceUrl.value = tab.url; } else { await extractCurrentPage(); } } catch (error) { showMessage(error.message, "error"); } }
 
 async function saveCurrentPage() {
   if (!pageData) return showMessage("请先点击“当前页”读取正文。", "error");
@@ -50,7 +50,7 @@ async function startMediaJob() {
   catch (error) { elements.resourceSubmit.disabled = false; elements.resourceSubmit.querySelector("span").textContent = "保存到本地"; showMessage(error.message, "error"); }
 }
 
-async function submitResource(event) { event.preventDefault(); hideMessage(); const url = elements.resourceUrl.value.trim(); if (!url) return; elements.resourceSubmit.disabled = true; try { if (activeMode === "media" || isVideoUrl(url)) await startMediaJob(); else await saveCurrentPage(); } finally { if (activeMode !== "media" && !isVideoUrl(url)) elements.resourceSubmit.disabled = false; } }
+async function submitResource(event) { event.preventDefault(); hideMessage(); const url = elements.resourceUrl.value.trim(); if (activeMode === "media" && !url) return showMessage("请先粘贴音视频链接。", "error"); if (activeMode === "page" && !pageData) return showMessage("请先点击“本页”读取正文。", "error"); elements.resourceSubmit.disabled = true; try { if (activeMode === "media" || isVideoUrl(url)) await startMediaJob(); else await saveCurrentPage(); } finally { if (activeMode !== "media" && !isVideoUrl(url)) elements.resourceSubmit.disabled = false; } }
 function renderJob(job) { const [number,label,progress] = stageMap[job.stage] || stageMap.starting; elements.jobStageNumber.textContent = number; elements.jobStage.textContent = label; elements.jobDetail.textContent = job.detail || "正在处理"; elements.jobProgress.style.width = `${progress}%`; elements.jobResult.textContent = job.status === "done" ? `已保存到 ${job.result?.path || "本地文件夹"}${job.result?.warning ? ` · ${job.result.warning}` : ""}` : job.status === "error" ? (job.error || "处理失败") : "可以关闭弹窗，任务会在本地继续运行。"; }
 function pollJob(jobId) { clearTimeout(pollTimer); const tick = async () => { try { const job = await ClipperAPI.getMediaJob(jobId); elements.jobCard.classList.remove("is-hidden"); renderJob(job); if (["done","error"].includes(job.status)) { await ClipperAPI.storageRemove([ACTIVE_JOB_KEY]); elements.resourceSubmit.disabled = false; elements.resourceSubmit.querySelector("span").textContent = "保存到本地"; if (job.status === "done") showMessage(`转写完成：${job.result.filename}`); return; } pollTimer = setTimeout(tick, 1400); } catch (error) { showMessage(`无法读取任务状态：${error.message}`, "error"); } }; tick(); }
 async function restoreMediaJob() { const stored = await ClipperAPI.storageGet([ACTIVE_JOB_KEY]); if (stored[ACTIVE_JOB_KEY]) pollJob(stored[ACTIVE_JOB_KEY]); }
