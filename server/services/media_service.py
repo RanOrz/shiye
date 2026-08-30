@@ -49,13 +49,13 @@ def validate_public_url(url: str, resolve_dns: bool = True) -> str:
     try:
         parsed = urlparse(url.strip())
     except ValueError as exc:
-        raise MediaServiceError("链接格式无效") from exc
+        raise MediaServiceError("链接格式无效", "MEDIA_URL_INVALID") from exc
     if parsed.scheme not in {"http", "https"} or not parsed.hostname:
-        raise MediaServiceError("只支持公开的 HTTP 或 HTTPS 音视频链接")
+        raise MediaServiceError("只支持公开的 HTTP 或 HTTPS 音视频链接", "MEDIA_URL_INVALID")
 
     host = parsed.hostname.lower()
     if host == "localhost" or host.endswith(".local"):
-        raise MediaServiceError("不允许访问本机或局域网地址")
+        raise MediaServiceError("不允许访问本机或局域网地址", "MEDIA_URL_PRIVATE")
 
     def ensure_global(address: str) -> None:
         try:
@@ -63,14 +63,14 @@ def validate_public_url(url: str, resolve_dns: bool = True) -> str:
         except ValueError:
             return
         if not ip.is_global:
-            raise MediaServiceError("不允许访问本机或局域网地址")
+            raise MediaServiceError("不允许访问本机或局域网地址", "MEDIA_URL_PRIVATE")
 
     ensure_global(host)
     if resolve_dns:
         try:
             addresses = socket.getaddrinfo(host, parsed.port or (443 if parsed.scheme == "https" else 80))
         except socket.gaierror as exc:
-            raise MediaServiceError("无法解析链接域名") from exc
+            raise MediaServiceError("无法解析链接域名", "MEDIA_URL_DNS") from exc
         for address in addresses:
             ensure_global(address[4][0])
     return parsed.geturl()
@@ -87,6 +87,7 @@ class MediaService:
         progress: ProgressCallback | None = None,
     ) -> MediaResult:
         notify = progress or (lambda _stage, _detail: None)
+        notify("validating", "正在检查链接安全性")
         safe_url = validate_public_url(url)
         notify("metadata", "正在读取媒体信息")
         metadata = self._extract_metadata(safe_url)

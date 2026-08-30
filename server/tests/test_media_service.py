@@ -21,10 +21,12 @@ class MediaServiceTests(unittest.TestCase):
         self.assertIsNone(extract_youtube_id("https://example.com/video"))
 
     def test_rejects_non_http_and_private_network_urls(self):
-        with self.assertRaises(MediaServiceError):
+        with self.assertRaises(MediaServiceError) as invalid:
             validate_public_url("file:///tmp/video.mp4", resolve_dns=False)
-        with self.assertRaises(MediaServiceError):
+        self.assertEqual(invalid.exception.code, "MEDIA_URL_INVALID")
+        with self.assertRaises(MediaServiceError) as private:
             validate_public_url("http://127.0.0.1/private", resolve_dns=False)
+        self.assertEqual(private.exception.code, "MEDIA_URL_PRIVATE")
 
     def test_rejects_hostname_resolving_to_private_address(self):
         with patch(

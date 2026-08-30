@@ -12,7 +12,7 @@ const elements = {
   jobStage: document.getElementById("job-stage"), jobDetail: document.getElementById("job-detail"), jobProgress: document.getElementById("job-progress"), jobResult: document.getElementById("job-result"),
 };
 
-const stageMap = { queued:["01","排队中",8], starting:["02","准备处理",15], metadata:["03","读取媒体信息",28], captions:["04","查找字幕",42], downloading:["05","提取音频",58], transcribing:["06","本地转写",74], organizing:["07","整理 Markdown",88], done:["08","已经保存",100], error:["!","处理失败",100] };
+const stageMap = { queued:["01","排队中",8], starting:["02","准备处理",15], validating:["03","检查链接",20], metadata:["04","读取媒体信息",28], captions:["05","查找字幕",42], downloading:["06","提取音频",58], transcribing:["07","本地转写",74], organizing:["08","整理 Markdown",88], done:["09","已经保存",100], error:["!","处理失败",100] };
 let pageData = null; let settings = null; let pollTimer = null; let activeMode = "page";
 
 function showMessage(text, type = "success") { elements.message.textContent = text; elements.message.classList.remove("is-hidden", "is-error"); elements.message.classList.toggle("is-error", type === "error"); }
